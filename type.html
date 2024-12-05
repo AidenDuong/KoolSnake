@@ -1,0 +1,65 @@
+<html>
+<body>
+    <py-script>import pygame
+        import random
+        
+        # Initialize pygame
+        pygame.init()
+        
+        # Define width and height of the screen
+        width = 1300
+        height = 800
+        screen_res = (width, height)
+        
+        pygame.display.set_caption("Flashing Ball")
+        screen = pygame.display.set_mode(screen_res)
+        
+        # Define colors
+        colors = [
+            (255, 0, 0),  # Red
+            (0, 255, 0),  # Green
+            (0, 0, 255),  # Blue
+            (255, 255, 0),  # Yellow
+            (255, 0, 255),  # Magenta
+            (0, 255, 255)  # Cyan
+        
+        ]
+        background_color = (255, 255, 255)  # Black
+        
+        # Ball properties
+        ball_color = random.choice(colors)  # Start with a random color
+        ball_radius = 40
+        ball_position = [100, 100]
+        ball_speed = [1, 1]
+        
+        # Game loop
+        while True:
+            # Event loop
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+        
+            # Fill the screen with the background color
+            screen.fill(background_color)
+        
+            # Move the ball
+            ball_position[0] += ball_speed[0]
+            ball_position[1] += ball_speed[1]
+        
+            # Check for collisions with screen boundaries
+            if ball_position[0] - ball_radius <= 0 or ball_position[0] + ball_radius >= width:
+                ball_speed[0] = -ball_speed[0]
+                ball_color = random.choice(colors)  # Change color on collision
+            if ball_position[1] - ball_radius <= 0 or ball_position[1] + ball_radius >= height:
+                ball_speed[1] = -ball_speed[1]
+                ball_color = random.choice(colors)  # Change color on collision
+        
+            # Draw the ball
+            pygame.draw.circle(screen, ball_color, ball_position, ball_radius)
+        
+            # Update the screen
+            pygame.display.flip()
+        </py-script>
+</body>
+</html>
