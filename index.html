@@ -23,6 +23,7 @@
     #menu, #shop, #end-screen { display: none; text-align: center; }
     #menu { display: block; }
     .shop-item { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    #shop span { color: white; } /* Ensure shop text is white */
   </style>
 </head>
 <body>
@@ -94,13 +95,16 @@
         const text = document.createElement('span');
         const button = document.createElement('button');
 
+        // Set text and button style
         text.textContent = `${skin.name} (${skin.price} coins)`;
+        text.style.color = 'white'; // Ensure text is white
         button.textContent = unlockedSkins.includes(skin.name) ? 'Use' : 'Buy';
         button.disabled = !unlockedSkins.includes(skin.name) && coins < skin.price;
         button.style.background = `linear-gradient(to right, ${skin.colors.join(', ')})`;
         button.style.color = 'white';
         button.style.border = selectedSkin === skin.name ? '2px solid white' : 'none';
 
+        // Button click logic
         button.addEventListener('click', () => {
           if (unlockedSkins.includes(skin.name)) {
             selectedSkin = skin.name;
