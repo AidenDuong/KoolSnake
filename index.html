@@ -82,20 +82,6 @@
       { name: 'Green', colors: ['green', 'lime'], price: 100 },
       { name: 'Purple', colors: ['purple', 'magenta'], price: 150 },
       { name: 'Yellow', colors: ['yellow', 'gold'], price: 200 },
-      { name: 'Ocean', colors: ['aqua', 'navy'], price: 250 },
-      { name: 'Sunset', colors: ['pink', 'orange'], price: 300 },
-      { name: 'Galaxy', colors: ['black', 'purple', 'cyan'], price: 350 },
-      { name: 'Emerald', colors: ['darkgreen', 'lightgreen'], price: 400 },
-      { name: 'Fire', colors: ['red', 'yellow'], price: 450 },
-      { name: 'Ice', colors: ['cyan', 'white'], price: 500 },
-      { name: 'Storm', colors: ['gray', 'black'], price: 550 },
-      { name: 'Rainbow', colors: ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'], price: 600 },
-      { name: 'Chocolate', colors: ['brown', 'tan'], price: 650 },
-      { name: 'Neon', colors: ['lime', 'fuchsia'], price: 700 },
-      { name: 'Cotton Candy', colors: ['pink', 'lightblue'], price: 750 },
-      { name: 'Lava', colors: ['orange', 'red', 'darkred'], price: 800 },
-      { name: 'Forest', colors: ['green', 'darkgreen'], price: 850 },
-      { name: 'Electric', colors: ['yellow', 'blue'], price: 900 },
     ];
 
     // Save Game State
@@ -116,6 +102,7 @@
 
         // Set text and button style
         text.textContent = `${skin.name} (${skin.price} coins)`;
+        text.style.color = 'white'; // Ensure text is white
         button.textContent = unlockedSkins.includes(skin.name) ? 'Use' : 'Buy';
         button.disabled = !unlockedSkins.includes(skin.name) && coins < skin.price;
 
