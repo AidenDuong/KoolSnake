@@ -1,151 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Snake Game</title>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game with Skins</title>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-    body {
-      background: black;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-    }
-    canvas {
-      border: 1px solid white;
-      display: none;
-    }
-    #score {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      color: white;
-      font-size: 24px;
-      font-family: Arial, sans-serif;
-      display: none;
-    }
-    #menu, #end-screen, #shop {
-      color: white;
-      text-align: center;
-    }
-    #menu button, #end-screen button, #shop button {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #shop {
-      display: none;
-    }
-    #coins {
-      font-size: 24px;
-      color: gold;
-    }
+    html, body { height: 100%; margin: 0; }
+    body { background: black; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: Arial, sans-serif; }
+    canvas { border: 1px solid white; }
+    button { margin: 5px; padding: 10px; font-size: 16px; cursor: pointer; }
+    #menu, #shop, #end-screen { display: none; }
+    .coins-display { position: absolute; top: 10px; left: 10px; font-size: 20px; }
+    .score-display { position: absolute; top: 10px; right: 10px; font-size: 20px; }
+    #shop-items button { display: block; margin-bottom: 5px; }
   </style>
 </head>
 <body>
-  <p id="score">Score: 0</p>
-  <canvas width="800" height="608" id="game"></canvas>
-
-  <!-- Menu -->
   <div id="menu">
     <h1>Snake Game</h1>
-    <p>Coins: <span id="coins">0</span></p>
     <button id="start-game">Start Game</button>
     <button id="open-shop">Shop</button>
+    <button id="exit-game">Exit</button>
   </div>
 
-  <!-- Shop -->
   <div id="shop">
     <h1>Shop</h1>
     <div id="shop-items"></div>
-    <button id="back-to-menu">Back to Menu</button>
+    <button id="back-to-menu">Back</button>
   </div>
 
-  <!-- End Screen -->
-  <div id="end-screen" style="display: none;">
+  <div id="end-screen">
     <h1>Game Over</h1>
-    <p id="final-score">Your Score: 0</p>
+    <p>Your final score: <span id="final-score"></span></p>
     <button id="restart-game">Restart</button>
-    <button id="select-skin">Change Skin</button>
+    <button id="select-skin">Select Skin</button>
   </div>
+
+  <canvas id="game" width="800" height="600"></canvas>
+  <p class="coins-display">Coins: <span id="coins">0</span></p>
+  <p class="score-display">Score: <span id="score">0</span></p>
 
   <script>
     const canvas = document.getElementById('game');
     const context = canvas.getContext('2d');
-    const scoreDisplay = document.getElementById('score');
     const menu = document.getElementById('menu');
     const shop = document.getElementById('shop');
-    const coinsDisplay = document.getElementById('coins');
     const endScreen = document.getElementById('end-screen');
-    const finalScore = document.getElementById('final-score');
     const shopItems = document.getElementById('shop-items');
-
+    const coinsDisplay = document.getElementById('coins');
+    const scoreDisplay = document.getElementById('score');
+    const finalScore = document.getElementById('final-score');
     const grid = 32;
     let count = 0;
     let coins = parseInt(localStorage.getItem('coins')) || 0;
-
-    const snake = {
-      x: 160,
-      y: 160,
-      dx: grid,
-      dy: 0,
-      cells: [],
-      maxCells: 4,
-    };
-
-    const apple = {
-      x: getRandomInt(0, canvas.width / grid) * grid,
-      y: getRandomInt(0, canvas.height / grid) * grid,
-    };
-
-    const skins = [
-  { name: 'Default', colors: ['blue', 'cyan'], price: 0 },
-  { name: 'Red', colors: ['red', 'orange'], price: 50 },
-  { name: 'Green', colors: ['green', 'lime'], price: 100 },
-  { name: 'Purple', colors: ['purple', 'magenta'], price: 150 },
-  { name: 'Yellow', colors: ['yellow', 'gold'], price: 200 },
-  { name: 'Pink', colors: ['pink', 'hotpink'], price: 250 },
-  { name: 'Ocean', colors: ['teal', 'lightblue'], price: 300 },
-  { name: 'Fire', colors: ['darkred', 'orangered'], price: 350 },
-  { name: 'Lava', colors: ['darkorange', 'red'], price: 400 },
-  { name: 'Forest', colors: ['darkgreen', 'forestgreen'], price: 450 },
-  { name: 'Ice', colors: ['lightblue', 'white'], price: 500 },
-  { name: 'Galaxy', colors: ['midnightblue', 'purple'], price: 550 },
-  { name: 'Neon', colors: ['lime', 'hotpink'], price: 600 },
-  { name: 'Sunset', colors: ['orange', 'red', 'pink'], price: 650 },
-  { name: 'Rainbow', colors: ['red', 'orange', 'yellow', 'green', 'blue', 'purple'], price: 700 },
-  { name: 'Steel', colors: ['gray', 'silver'], price: 750 },
-  { name: 'Electric', colors: ['yellow', 'electricblue'], price: 800 },
-  { name: 'Mystic', colors: ['indigo', 'violet'], price: 850 },
-  { name: 'Candy', colors: ['pink', 'lightyellow'], price: 900 },
-  { name: 'Shadow', colors: ['black', 'gray'], price: 1000 },
-];
-    ];
     let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['Default'];
     let selectedSkin = localStorage.getItem('selectedSkin') || 'Default';
 
-    let floatingText = null;
-    let music = new Audio('https://example.com/cool-music.mp3'); // Replace with your own music URL
-    music.loop = true;
+    // Snake and Apple
+    const snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
+    const apple = { x: 320, y: 320 };
 
+    // Skins
+    const skins = [
+      { name: 'Default', colors: ['blue', 'cyan'], price: 0 },
+      { name: 'Red', colors: ['red', 'orange'], price: 50 },
+      { name: 'Green', colors: ['green', 'lime'], price: 100 },
+      { name: 'Purple', colors: ['purple', 'magenta'], price: 150 },
+      { name: 'Yellow', colors: ['yellow', 'gold'], price: 200 },
+      { name: 'Pink', colors: ['pink', 'hotpink'], price: 250 },
+      { name: 'Ocean', colors: ['teal', 'lightblue'], price: 300 },
+      { name: 'Fire', colors: ['darkred', 'orangered'], price: 350 },
+      { name: 'Lava', colors: ['darkorange', 'red'], price: 400 },
+      { name: 'Forest', colors: ['darkgreen', 'forestgreen'], price: 450 },
+      { name: 'Ice', colors: ['lightblue', 'white'], price: 500 },
+      { name: 'Galaxy', colors: ['midnightblue', 'purple'], price: 550 },
+      { name: 'Neon', colors: ['lime', 'hotpink'], price: 600 },
+      { name: 'Sunset', colors: ['orange', 'red', 'pink'], price: 650 },
+      { name: 'Rainbow', colors: ['red', 'orange', 'yellow', 'green', 'blue', 'purple'], price: 700 },
+      { name: 'Steel', colors: ['gray', 'silver'], price: 750 },
+      { name: 'Electric', colors: ['yellow', 'electricblue'], price: 800 },
+      { name: 'Mystic', colors: ['indigo', 'violet'], price: 850 },
+      { name: 'Candy', colors: ['pink', 'lightyellow'], price: 900 },
+      { name: 'Shadow', colors: ['black', 'gray'], price: 1000 },
+    ];
+
+    // Update coins and unlocked skins
+    function updateLocalStorage() {
+      localStorage.setItem('coins', coins);
+      localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+      localStorage.setItem('selectedSkin', selectedSkin);
+    }
+
+    // Random Integer
     function getRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min)) + min;
     }
 
-    function drawSnakeCell(cell) {
-      const skin = skins.find((s) => s.name === selectedSkin);
-      const gradient = context.createLinearGradient(cell.x, cell.y, cell.x + grid, cell.y + grid);
-      gradient.addColorStop(0, skin.colors[0]);
-      gradient.addColorStop(1, skin.colors[1]);
-      context.fillStyle = gradient;
-      context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
-    }
-
+    // Reset game
     function resetGame() {
       snake.x = 160;
       snake.y = 160;
@@ -153,91 +104,64 @@
       snake.maxCells = 4;
       snake.dx = grid;
       snake.dy = 0;
-      scoreDisplay.textContent = 'Score: 0';
-      apple.x = getRandomInt(0, canvas.width / grid) * grid;
-      apple.y = getRandomInt(0, canvas.height / grid) * grid;
+      apple.x = getRandomInt(0, 25) * grid;
+      apple.y = getRandomInt(0, 25) * grid;
     }
 
-    function unlockSkin(score) {
-      skins.forEach((skin) => {
-        if (!unlockedSkins.includes(skin.name) && coins >= skin.price) {
-          unlockedSkins.push(skin.name);
-          localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
-        }
-      });
+    // Draw Snake Cell
+    function drawSnakeCell(cell) {
+      const skin = skins.find((s) => s.name === selectedSkin);
+      const gradient = context.createLinearGradient(cell.x, cell.y, cell.x + grid, cell.y + grid);
+      skin.colors.forEach((color, index) => gradient.addColorStop(index / (skin.colors.length - 1), color));
+      context.fillStyle = gradient;
+      context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
     }
 
-    function drawFloatingText() {
-      if (floatingText) {
-        context.font = '20px Arial';
-        context.fillStyle = 'yellow';
-        context.fillText('+10', floatingText.x, floatingText.y);
-        floatingText.y -= 1;
-        if (floatingText.y < floatingText.startY - 20) {
-          floatingText = null;
-        }
-      }
-    }
-
+    // Game Loop
     function loop() {
       requestAnimationFrame(loop);
-
       if (++count < 4) return;
       count = 0;
-
       context.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Snake Movement
       snake.x += snake.dx;
       snake.y += snake.dy;
-
       if (snake.x < 0) snake.x = canvas.width - grid;
-      else if (snake.x >= canvas.width) snake.x = 0;
-
+      if (snake.x >= canvas.width) snake.x = 0;
       if (snake.y < 0) snake.y = canvas.height - grid;
-      else if (snake.y >= canvas.height) snake.y = 0;
+      if (snake.y >= canvas.height) snake.y = 0;
 
+      // Snake Growth
       snake.cells.unshift({ x: snake.x, y: snake.y });
       if (snake.cells.length > snake.maxCells) snake.cells.pop();
 
+      // Draw Apple
       context.fillStyle = 'red';
       context.fillRect(apple.x, apple.y, grid - 1, grid - 1);
 
+      // Draw Snake
       snake.cells.forEach((cell, index) => {
         drawSnakeCell(cell);
-
         if (cell.x === apple.x && cell.y === apple.y) {
           snake.maxCells++;
-          scoreDisplay.textContent = `Score: ${snake.maxCells - 4}`;
           coins += 10;
           coinsDisplay.textContent = coins;
-          localStorage.setItem('coins', coins);
-
-          floatingText = { x: apple.x, y: apple.y, startY: apple.y };
-          apple.x = getRandomInt(0, canvas.width / grid) * grid;
-          apple.y = getRandomInt(0, canvas.height / grid) * grid;
+          apple.x = getRandomInt(0, 25) * grid;
+          apple.y = getRandomInt(0, 25) * grid;
+          updateLocalStorage();
         }
-
         for (let i = index + 1; i < snake.cells.length; i++) {
-          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
-            finalScore.textContent = `Your Score: ${snake.maxCells - 4}`;
-            canvas.style.display = 'none';
-            scoreDisplay.style.display = 'none';
-            endScreen.style.display = 'block';
-            music.pause();
-            return;
-          }
+          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) resetGame();
         }
       });
-
-      drawFloatingText();
     }
 
+    // Event Listeners
     document.getElementById('start-game').addEventListener('click', () => {
       menu.style.display = 'none';
       canvas.style.display = 'block';
       scoreDisplay.style.display = 'block';
-      resetGame();
-      music.play();
       requestAnimationFrame(loop);
     });
 
@@ -253,9 +177,7 @@
           if (coins >= skin.price) {
             coins -= skin.price;
             unlockedSkins.push(skin.name);
-            localStorage.setItem('coins', coins);
-            localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
-            coinsDisplay.textContent = coins;
+            updateLocalStorage();
             button.disabled = true;
           }
         });
@@ -271,15 +193,8 @@
     document.getElementById('restart-game').addEventListener('click', () => {
       endScreen.style.display = 'none';
       canvas.style.display = 'block';
-      scoreDisplay.style.display = 'block';
       resetGame();
-      music.play();
       requestAnimationFrame(loop);
-    });
-
-    document.getElementById('select-skin').addEventListener('click', () => {
-      endScreen.style.display = 'none';
-      menu.style.display = 'block';
     });
 
     document.addEventListener('keydown', (e) => {
@@ -297,6 +212,10 @@
         snake.dx = 0;
       }
     });
+
+    // Load initial data
+    coinsDisplay.textContent = coins;
+    resetGame();
   </script>
 </body>
 </html>
