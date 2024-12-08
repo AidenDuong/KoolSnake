@@ -72,6 +72,7 @@
     <button id="start-game">Start Game</button>
     <button id="open-shop">Shop</button>
     <button id="view-leaderboard">Leaderboard</button>
+    <button id="choose-background">Choose Background</button> <!-- New Button for Background -->
   </div>
 
   <!-- Shop -->
@@ -101,6 +102,9 @@
   <div class="info coins-display">Coins: <span id="coins">0</span></div>
   <div class="info score-display">Score: <span id="score">0</span></div>
 
+  <!-- File Input for Background Selection -->
+  <input type="file" id="background-file" accept="image/*" class="hidden" onchange="setCustomBackground()">
+
   <script>
     // Core Variables
     const canvas = document.getElementById('game');
@@ -121,6 +125,7 @@
     let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['Default'];
     let selectedSkin = localStorage.getItem('selectedSkin') || 'Default';
     let leaderboardScores = JSON.parse(localStorage.getItem('leaderboardScores')) || [];
+    let backgroundImage = localStorage.getItem('backgroundImage') || null; // Custom background
 
     // Snake and Apple
     const snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
@@ -154,11 +159,24 @@
       localStorage.setItem('coins', coins);
       localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
       localStorage.setItem('selectedSkin', selectedSkin);
+      localStorage.setItem('backgroundImage', backgroundImage); // Save custom background
     }
 
-    // Save Leaderboard
-    function saveLeaderboard() {
-      localStorage.setItem('leaderboardScores', JSON.stringify(leaderboardScores));
+    // Set Custom Background
+    function setCustomBackground() {
+      const fileInput = document.getElementById('background-file');
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = function (e) {
+        backgroundImage = e.target.result;
+        document.body.style.backgroundImage = `url(${backgroundImage})`;
+        saveGameState();
+      };
+      
+      if (file) {
+        reader.readAsDataURL(file);
+      }
     }
 
     // Load Shop
@@ -206,98 +224,6 @@
       });
     }
 
-    // Add Score to Leaderboard
-    function addToLeaderboard(score) {
-      leaderboardScores.push(score);
-      leaderboardScores.sort((a, b) => b - a); // Sort descending
-      leaderboardScores = leaderboardScores.slice(0, 5); // Keep top 5
-      saveLeaderboard();
-      displayLeaderboard();
-    }
-
-    // Display Leaderboard
-    function displayLeaderboard() {
-      leaderboardList.innerHTML = '';
-      leaderboardScores.forEach(score => {
-        const li = document.createElement('li');
-        li.textContent = `Score: ${score}`;
-        leaderboardList.appendChild(li);
-      });
-    }
-
-    // Reset Game
-    function resetGame() {
-      snake.x = 160;
-      snake.y = 160;
-      snake.cells = [];
-      snake.maxCells = 4;
-      snake.dx = grid;
-      snake.dy = 0;
-      apple.x = Math.floor(Math.random() * (canvas.width / grid)) * grid;
-      apple.y = Math.floor(Math.random() * (canvas.height / grid)) * grid;
-    }
-
-    // Draw Snake
-    function drawSnake() {
-      const skin = skins.find(s => s.name === selectedSkin);
-      snake.cells.forEach((cell, index) => {
-        const gradient = context.createLinearGradient(cell.x, cell.y, cell.x + grid, cell.y + grid);
-        skin.colors.forEach((color, i) => gradient.addColorStop(i / (skin.colors.length - 1), color));
-        context.fillStyle = gradient;
-        context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
-
-        // Check Collision
-        if (cell.x === apple.x && cell.y === apple.y) {
-          snake.maxCells++;
-          coins += 10;
-          coinsDisplay.textContent = coins;
-          apple.x = Math.floor(Math.random() * (canvas.width / grid)) * grid;
-          apple.y = Math.floor(Math.random() * (canvas.height / grid)) * grid;
-          saveGameState();
-        }
-
-        for (let i = index + 1; i < snake.cells.length; i++) {
-          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
-            showEndScreen();
-            return;
-          }
-        }
-      });
-    }
-
-    // Show End Screen
-    function showEndScreen() {
-      canvas.style.display = 'none';
-      endScreen.style.display = 'block';
-      finalScore.textContent = snake.maxCells - 4;
-      addToLeaderboard(snake.maxCells - 4); // Add the score to the leaderboard
-    }
-
-    // Game Loop
-    function loop() {
-      requestAnimationFrame(loop);
-      if (++count < 4) return;
-      count = 0;
-
-      context.clearRect(0, 0, canvas.width, canvas.height);
-
-      snake.x += snake.dx;
-      snake.y += snake.dy;
-
-      if (snake.x < 0) snake.x = canvas.width - grid;
-      if (snake.x >= canvas.width) snake.x = 0;
-      if (snake.y < 0) snake.y = canvas.height - grid;
-      if (snake.y >= canvas.height) snake.y = 0;
-
-      snake.cells.unshift({ x: snake.x, y: snake.y });
-      if (snake.cells.length > snake.maxCells) snake.cells.pop();
-
-      context.fillStyle = 'red';
-      context.fillRect(apple.x, apple.y, grid - 1, grid - 1);
-
-      drawSnake();
-    }
-
     // Event Listeners
     document.getElementById('start-game').addEventListener('click', () => {
       menu.style.display = 'none';
@@ -316,6 +242,10 @@
       menu.style.display = 'none';
       leaderboard.style.display = 'block';
       displayLeaderboard();
+    });
+
+    document.getElementById('choose-background').addEventListener('click', () => {
+      document.getElementById('background-file').click(); // Trigger file input
     });
 
     document.getElementById('back-to-menu').addEventListener('click', () => {
@@ -358,6 +288,9 @@
 
     // Load Initial State
     coinsDisplay.textContent = coins;
+    if (backgroundImage) {
+      document.body.style.backgroundImage = `url(${backgroundImage})`;
+    }
     resetGame();
   </script>
 </body>
