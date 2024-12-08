@@ -15,7 +15,11 @@
       font-family: Arial, sans-serif;
       text-align: center;
     }
-    canvas { border: 2px solid white; display: none; }
+    canvas { 
+      border: 2px solid white; /* Smaller border */
+      display: none; 
+      margin: 20px; /* Add some margin to separate the canvas from surrounding content */
+    }
     button { margin: 5px; padding: 10px; font-size: 16px; cursor: pointer; }
     .hidden { display: none; }
     .info { position: absolute; font-size: 18px; color: white; }
@@ -110,7 +114,7 @@
     const scoreDisplay = document.getElementById('score');
     const finalScore = document.getElementById('final-score');
     const leaderboardList = document.getElementById('leaderboard-list');
-    const grid = 20;  // Adjusted grid size for smoother movement
+    const grid = 20;  // Grid size
     const border = 2; // Smaller border size
     let count = 0;
     let coins = parseInt(localStorage.getItem('coins')) || 0;
