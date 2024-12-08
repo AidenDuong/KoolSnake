@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Snake Game with Skins and Shop</title>
+  <title>Snake Game with Skins, Shop, and Leaderboard</title>
   <style>
     html, body { height: 100%; margin: 0; }
     body {
@@ -15,7 +15,7 @@
       font-family: Arial, sans-serif;
       text-align: center;
     }
-    canvas { border: 1px solid white; display: none; }
+    canvas { border: 2px solid white; display: none; }
     button { margin: 5px; padding: 10px; font-size: 16px; cursor: pointer; }
     .hidden { display: none; }
     .info { position: absolute; font-size: 18px; color: white; }
@@ -35,6 +35,27 @@
       font-weight: bold;
       letter-spacing: 5px;
     }
+
+    /* Leaderboard */
+    #leaderboard {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      color: white;
+      margin-top: 20px;
+      border-radius: 5px;
+    }
+    #leaderboard h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    #leaderboard ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 10px;
+    }
+    #leaderboard li {
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
@@ -46,6 +67,7 @@
     <h1>Snake Game</h1>
     <button id="start-game">Start Game</button>
     <button id="open-shop">Shop</button>
+    <button id="view-leaderboard">Leaderboard</button>
   </div>
 
   <!-- Shop -->
@@ -63,6 +85,13 @@
     <button id="return-menu">Return to Menu</button>
   </div>
 
+  <!-- Leaderboard -->
+  <div id="leaderboard" class="hidden">
+    <h2>Leaderboard</h2>
+    <ul id="leaderboard-list"></ul>
+    <button id="back-to-menu-leaderboard">Back to Menu</button>
+  </div>
+
   <!-- Game -->
   <canvas id="game" width="800" height="600"></canvas>
   <div class="info coins-display">Coins: <span id="coins">0</span></div>
@@ -75,15 +104,19 @@
     const menu = document.getElementById('menu');
     const shop = document.getElementById('shop');
     const endScreen = document.getElementById('end-screen');
+    const leaderboard = document.getElementById('leaderboard');
     const shopItems = document.getElementById('shop-items');
     const coinsDisplay = document.getElementById('coins');
     const scoreDisplay = document.getElementById('score');
     const finalScore = document.getElementById('final-score');
-    const grid = 32;  // This defines the grid size
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const grid = 20;  // Adjusted grid size for smoother movement
+    const border = 2; // Smaller border size
     let count = 0;
     let coins = parseInt(localStorage.getItem('coins')) || 0;
     let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['Default'];
     let selectedSkin = localStorage.getItem('selectedSkin') || 'Default';
+    let leaderboardScores = JSON.parse(localStorage.getItem('leaderboardScores')) || [];
 
     // Snake and Apple
     const snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
@@ -117,6 +150,11 @@
       localStorage.setItem('coins', coins);
       localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
       localStorage.setItem('selectedSkin', selectedSkin);
+    }
+
+    // Save Leaderboard
+    function saveLeaderboard() {
+      localStorage.setItem('leaderboardScores', JSON.stringify(leaderboardScores));
     }
 
     // Load Shop
@@ -161,6 +199,25 @@
         div.appendChild(text);
         div.appendChild(button);
         shopItems.appendChild(div);
+      });
+    }
+
+    // Add Score to Leaderboard
+    function addToLeaderboard(score) {
+      leaderboardScores.push(score);
+      leaderboardScores.sort((a, b) => b - a); // Sort descending
+      leaderboardScores = leaderboardScores.slice(0, 5); // Keep top 5
+      saveLeaderboard();
+      displayLeaderboard();
+    }
+
+    // Display Leaderboard
+    function displayLeaderboard() {
+      leaderboardList.innerHTML = '';
+      leaderboardScores.forEach(score => {
+        const li = document.createElement('li');
+        li.textContent = `Score: ${score}`;
+        leaderboardList.appendChild(li);
       });
     }
 
@@ -209,6 +266,7 @@
       canvas.style.display = 'none';
       endScreen.style.display = 'block';
       finalScore.textContent = snake.maxCells - 4;
+      addToLeaderboard(snake.maxCells - 4); // Add the score to the leaderboard
     }
 
     // Game Loop
@@ -250,8 +308,19 @@
       loadShop();
     });
 
+    document.getElementById('view-leaderboard').addEventListener('click', () => {
+      menu.style.display = 'none';
+      leaderboard.style.display = 'block';
+      displayLeaderboard();
+    });
+
     document.getElementById('back-to-menu').addEventListener('click', () => {
       shop.style.display = 'none';
+      menu.style.display = 'block';
+    });
+
+    document.getElementById('back-to-menu-leaderboard').addEventListener('click', () => {
+      leaderboard.style.display = 'none';
       menu.style.display = 'block';
     });
 
@@ -260,6 +329,11 @@
       canvas.style.display = 'block';
       resetGame();
       requestAnimationFrame(loop);
+    });
+
+    document.getElementById('return-menu').addEventListener('click', () => {
+      endScreen.style.display = 'none';
+      menu.style.display = 'block';
     });
 
     document.addEventListener('keydown', (e) => {
