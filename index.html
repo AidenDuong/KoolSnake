@@ -79,7 +79,7 @@
     const coinsDisplay = document.getElementById('coins');
     const scoreDisplay = document.getElementById('score');
     const finalScore = document.getElementById('final-score');
-    const grid = 32;
+    const grid = 32;  // This defines the grid size
     let count = 0;
     let coins = parseInt(localStorage.getItem('coins')) || 0;
     let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['Default'];
@@ -172,8 +172,8 @@
       snake.maxCells = 4;
       snake.dx = grid;
       snake.dy = 0;
-      apple.x = Math.floor(Math.random() * 25) * grid;
-      apple.y = Math.floor(Math.random() * 19) * grid;
+      apple.x = Math.floor(Math.random() * (canvas.width / grid)) * grid;
+      apple.y = Math.floor(Math.random() * (canvas.height / grid)) * grid;
     }
 
     // Draw Snake
@@ -190,8 +190,8 @@
           snake.maxCells++;
           coins += 10;
           coinsDisplay.textContent = coins;
-          apple.x = Math.floor(Math.random() * 25) * grid;
-          apple.y = Math.floor(Math.random() * 19) * grid;
+          apple.x = Math.floor(Math.random() * (canvas.width / grid)) * grid;
+          apple.y = Math.floor(Math.random() * (canvas.height / grid)) * grid;
           saveGameState();
         }
 
