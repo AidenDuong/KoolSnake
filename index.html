@@ -21,7 +21,8 @@
   </style>
 </head>
 <body>
-<canvas width="800" height="800" id="game"></canvas>
+  <p id = "score"></p>
+<canvas width="800" height="600" id="game"></canvas>
 <script>
 var canvas = document.getElementById('game');
 var context = canvas.getContext('2d');
@@ -110,6 +111,7 @@ function loop() {
     // snake ate apple
     if (cell.x === apple.x && cell.y === apple.y) {
       snake.maxCells++;
+      document.getElementById("score").innerHTML = snake.maxCells -4;
 
       // canvas is 400x400 which is 25x25 grids
       apple.x = getRandomInt(0, 25) * grid;
