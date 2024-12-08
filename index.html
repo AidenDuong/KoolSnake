@@ -23,7 +23,7 @@
     #menu, #shop, #end-screen { display: none; text-align: center; }
     #menu { display: block; }
     .shop-item { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    #shop span { color: white; } /* Ensure shop text is white */
+    .shop-item span { color: white; } /* Shop text white */
   </style>
 </head>
 <body>
@@ -55,6 +55,7 @@
   <div class="info score-display">Score: <span id="score">0</span></div>
 
   <script>
+    // Core Variables
     const canvas = document.getElementById('game');
     const context = canvas.getContext('2d');
     const menu = document.getElementById('menu');
@@ -70,9 +71,11 @@
     let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['Default'];
     let selectedSkin = localStorage.getItem('selectedSkin') || 'Default';
 
+    // Snake and Apple
     const snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
     const apple = { x: 320, y: 320 };
 
+    // Skins
     const skins = [
       { name: 'Default', colors: ['blue', 'cyan'], price: 0 },
       { name: 'Red', colors: ['red', 'orange'], price: 50 },
@@ -81,12 +84,14 @@
       { name: 'Yellow', colors: ['yellow', 'gold'], price: 200 },
     ];
 
+    // Save Game State
     function saveGameState() {
       localStorage.setItem('coins', coins);
       localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
       localStorage.setItem('selectedSkin', selectedSkin);
     }
 
+    // Load Shop
     function loadShop() {
       shopItems.innerHTML = '';
       skins.forEach(skin => {
@@ -100,9 +105,18 @@
         text.style.color = 'white'; // Ensure text is white
         button.textContent = unlockedSkins.includes(skin.name) ? 'Use' : 'Buy';
         button.disabled = !unlockedSkins.includes(skin.name) && coins < skin.price;
+
+        // Add styles for skins
+        if (coins < skin.price && !unlockedSkins.includes(skin.name)) {
+          button.style.border = '2px solid red'; // Red border if not affordable
+        } else if (selectedSkin === skin.name) {
+          button.style.border = '2px solid white'; // Highlight selected skin
+        } else {
+          button.style.border = 'none'; // Default
+        }
+
         button.style.background = `linear-gradient(to right, ${skin.colors.join(', ')})`;
         button.style.color = 'white';
-        button.style.border = selectedSkin === skin.name ? '2px solid white' : 'none';
 
         // Button click logic
         button.addEventListener('click', () => {
@@ -123,6 +137,7 @@
       });
     }
 
+    // Reset Game
     function resetGame() {
       snake.x = 160;
       snake.y = 160;
@@ -134,6 +149,7 @@
       apple.y = Math.floor(Math.random() * 19) * grid;
     }
 
+    // Draw Snake
     function drawSnake() {
       const skin = skins.find(s => s.name === selectedSkin);
       snake.cells.forEach((cell, index) => {
@@ -142,6 +158,7 @@
         context.fillStyle = gradient;
         context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
 
+        // Check Collision
         if (cell.x === apple.x && cell.y === apple.y) {
           snake.maxCells++;
           coins += 10;
@@ -160,12 +177,14 @@
       });
     }
 
+    // Show End Screen
     function showEndScreen() {
       canvas.style.display = 'none';
       endScreen.style.display = 'block';
       finalScore.textContent = snake.maxCells - 4;
     }
 
+    // Game Loop
     function loop() {
       requestAnimationFrame(loop);
       if (++count < 4) return;
@@ -190,6 +209,7 @@
       drawSnake();
     }
 
+    // Event Listeners
     document.getElementById('start-game').addEventListener('click', () => {
       menu.style.display = 'none';
       canvas.style.display = 'block';
@@ -231,6 +251,7 @@
       }
     });
 
+    // Load Initial State
     coinsDisplay.textContent = coins;
     resetGame();
   </script>
