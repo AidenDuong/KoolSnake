@@ -28,15 +28,22 @@
       font-family: Arial, sans-serif;
       display: none;
     }
-    #menu, #end-screen {
+    #menu, #end-screen, #shop {
       color: white;
       text-align: center;
     }
-    #menu button, #end-screen button {
+    #menu button, #end-screen button, #shop button {
       margin: 10px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
+    }
+    #shop {
+      display: none;
+    }
+    #coins {
+      font-size: 24px;
+      color: gold;
     }
   </style>
 </head>
@@ -44,13 +51,22 @@
   <p id="score">Score: 0</p>
   <canvas width="800" height="608" id="game"></canvas>
 
+  <!-- Menu -->
   <div id="menu">
     <h1>Snake Game</h1>
-    <p>Select a skin:</p>
-    <div id="skin-list"></div>
+    <p>Coins: <span id="coins">0</span></p>
     <button id="start-game">Start Game</button>
+    <button id="open-shop">Shop</button>
   </div>
 
+  <!-- Shop -->
+  <div id="shop">
+    <h1>Shop</h1>
+    <div id="shop-items"></div>
+    <button id="back-to-menu">Back to Menu</button>
+  </div>
+
+  <!-- End Screen -->
   <div id="end-screen" style="display: none;">
     <h1>Game Over</h1>
     <p id="final-score">Your Score: 0</p>
@@ -63,12 +79,15 @@
     const context = canvas.getContext('2d');
     const scoreDisplay = document.getElementById('score');
     const menu = document.getElementById('menu');
+    const shop = document.getElementById('shop');
+    const coinsDisplay = document.getElementById('coins');
     const endScreen = document.getElementById('end-screen');
     const finalScore = document.getElementById('final-score');
-    const skinList = document.getElementById('skin-list');
+    const shopItems = document.getElementById('shop-items');
 
     const grid = 32;
     let count = 0;
+    let coins = parseInt(localStorage.getItem('coins')) || 0;
 
     const snake = {
       x: 160,
@@ -85,40 +104,20 @@
     };
 
     const skins = [
-      { name: 'Default', colors: ['blue', 'cyan'] },
-      { name: 'Red', colors: ['red', 'orange'], unlockAt: 10 },
-      { name: 'Green', colors: ['green', 'lime'], unlockAt: 20 },
-      { name: 'Purple', colors: ['purple', 'magenta'], unlockAt: 30 },
+      { name: 'Default', colors: ['blue', 'cyan'], price: 0 },
+      { name: 'Red', colors: ['red', 'orange'], price: 50 },
+      { name: 'Green', colors: ['green', 'lime'], price: 100 },
+      { name: 'Purple', colors: ['purple', 'magenta'], price: 150 },
     ];
     let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['Default'];
     let selectedSkin = localStorage.getItem('selectedSkin') || 'Default';
 
+    let floatingText = null;
+    let music = new Audio('https://example.com/cool-music.mp3'); // Replace with your own music URL
+    music.loop = true;
+
     function getRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min)) + min;
-    }
-
-    function updateSkinList() {
-      skinList.innerHTML = '';
-      skins.forEach((skin) => {
-        const button = document.createElement('button');
-        button.textContent = skin.name;
-        button.disabled = !unlockedSkins.includes(skin.name);
-        button.style.backgroundColor = skin.colors[0];
-        button.addEventListener('click', () => {
-          selectedSkin = skin.name;
-          localStorage.setItem('selectedSkin', selectedSkin);
-        });
-        skinList.appendChild(button);
-      });
-    }
-
-    function unlockSkin(score) {
-      skins.forEach((skin) => {
-        if (!unlockedSkins.includes(skin.name) && skin.unlockAt && score >= skin.unlockAt) {
-          unlockedSkins.push(skin.name);
-          localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
-        }
-      });
     }
 
     function drawSnakeCell(cell) {
@@ -140,6 +139,27 @@
       scoreDisplay.textContent = 'Score: 0';
       apple.x = getRandomInt(0, canvas.width / grid) * grid;
       apple.y = getRandomInt(0, canvas.height / grid) * grid;
+    }
+
+    function unlockSkin(score) {
+      skins.forEach((skin) => {
+        if (!unlockedSkins.includes(skin.name) && coins >= skin.price) {
+          unlockedSkins.push(skin.name);
+          localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+        }
+      });
+    }
+
+    function drawFloatingText() {
+      if (floatingText) {
+        context.font = '20px Arial';
+        context.fillStyle = 'yellow';
+        context.fillText('+10', floatingText.x, floatingText.y);
+        floatingText.y -= 1;
+        if (floatingText.y < floatingText.startY - 20) {
+          floatingText = null;
+        }
+      }
     }
 
     function loop() {
@@ -171,7 +191,11 @@
         if (cell.x === apple.x && cell.y === apple.y) {
           snake.maxCells++;
           scoreDisplay.textContent = `Score: ${snake.maxCells - 4}`;
-          unlockSkin(snake.maxCells - 4);
+          coins += 10;
+          coinsDisplay.textContent = coins;
+          localStorage.setItem('coins', coins);
+
+          floatingText = { x: apple.x, y: apple.y, startY: apple.y };
           apple.x = getRandomInt(0, canvas.width / grid) * grid;
           apple.y = getRandomInt(0, canvas.height / grid) * grid;
         }
@@ -182,10 +206,13 @@
             canvas.style.display = 'none';
             scoreDisplay.style.display = 'none';
             endScreen.style.display = 'block';
+            music.pause();
             return;
           }
         }
       });
+
+      drawFloatingText();
     }
 
     document.getElementById('start-game').addEventListener('click', () => {
@@ -193,7 +220,35 @@
       canvas.style.display = 'block';
       scoreDisplay.style.display = 'block';
       resetGame();
+      music.play();
       requestAnimationFrame(loop);
+    });
+
+    document.getElementById('open-shop').addEventListener('click', () => {
+      menu.style.display = 'none';
+      shop.style.display = 'block';
+      shopItems.innerHTML = '';
+      skins.forEach((skin) => {
+        const button = document.createElement('button');
+        button.textContent = `${skin.name} (${skin.price} coins)`;
+        button.disabled = coins < skin.price || unlockedSkins.includes(skin.name);
+        button.addEventListener('click', () => {
+          if (coins >= skin.price) {
+            coins -= skin.price;
+            unlockedSkins.push(skin.name);
+            localStorage.setItem('coins', coins);
+            localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+            coinsDisplay.textContent = coins;
+            button.disabled = true;
+          }
+        });
+        shopItems.appendChild(button);
+      });
+    });
+
+    document.getElementById('back-to-menu').addEventListener('click', () => {
+      shop.style.display = 'none';
+      menu.style.display = 'block';
     });
 
     document.getElementById('restart-game').addEventListener('click', () => {
@@ -201,13 +256,13 @@
       canvas.style.display = 'block';
       scoreDisplay.style.display = 'block';
       resetGame();
+      music.play();
       requestAnimationFrame(loop);
     });
 
     document.getElementById('select-skin').addEventListener('click', () => {
       endScreen.style.display = 'none';
       menu.style.display = 'block';
-      updateSkinList();
     });
 
     document.addEventListener('keydown', (e) => {
@@ -225,8 +280,6 @@
         snake.dx = 0;
       }
     });
-
-    updateSkinList();
   </script>
 </body>
 </html>
