@@ -29,7 +29,7 @@
     #menu { display: block; }
     .shop-item { display: flex; justify-content: space-between; margin-bottom: 10px; }
     .shop-item span { color: white; } 
-    
+
     /* Title Styling */
     #title {
       font-size: 48px;
@@ -137,10 +137,6 @@
     let leaderboardScores = JSON.parse(localStorage.getItem('leaderboardScores')) || [];
     let customBackground = localStorage.getItem('customBackground') || null; // Store custom background
 
-    // Snake and Apple
-    const snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
-    const apple = { x: 320, y: 320 };
-
     // Save Game State
     function saveGameState() {
       localStorage.setItem('coins', coins);
@@ -202,11 +198,9 @@
         loadDefaultBackground();
       }
 
-      const skin = skins.find(s => s.name === selectedSkin);
+      const snakeColor = selectedSkin === 'Default' ? 'green' : 'blue';
       snake.cells.forEach((cell) => {
-        const gradient = context.createLinearGradient(cell.x, cell.y, cell.x + grid, cell.y + grid);
-        skin.colors.forEach((color, i) => gradient.addColorStop(i / (skin.colors.length - 1), color));
-        context.fillStyle = gradient;
+        context.fillStyle = snakeColor;
         context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
       });
 
@@ -214,19 +208,34 @@
       context.fillRect(apple.x, apple.y, grid - 1, grid - 1);
     }
 
-    // Game Loop (not included all game logic for brevity)
+    // Initialize Snake, Apple, and Game Loop
+    const snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
+    const apple = { x: 320, y: 320 };
+
+    // Game Loop
     function gameLoop() {
       requestAnimationFrame(gameLoop);
       if (++count < 4) return;
       count = 0;
       drawSnake();
-      // More game logic (collision detection, score update, etc.)
     }
 
-    // Load Initial State
+    // Start Game
+    document.getElementById('start-game').addEventListener('click', () => {
+      menu.style.display = 'none';
+      canvas.style.display = 'block';
+      gameLoop();
+    });
+
+    // Back to Menu
+    document.getElementById('back-to-menu').addEventListener('click', () => {
+      shop.style.display = 'none';
+      menu.style.display = 'block';
+    });
+
+    // Start Game Logic
     coinsDisplay.textContent = coins;
     loadDefaultBackground();
-    gameLoop();
   </script>
 </body>
 </html>
