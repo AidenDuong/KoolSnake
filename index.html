@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Kool's Snake</title>
+  <title>Snake Game</title>
   <meta charset="UTF-8">
   <style>
     html, body {
@@ -13,9 +13,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
     }
     canvas {
       border: 1px solid white;
+      display: none;
     }
     #score {
       position: absolute;
@@ -24,35 +26,120 @@
       color: white;
       font-size: 24px;
       font-family: Arial, sans-serif;
+      display: none;
+    }
+    #menu, #end-screen {
+      color: white;
+      text-align: center;
+    }
+    #menu button, #end-screen button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <p id="score">Score: 0</p>
-  <canvas width="800" height="600" id="game"></canvas>
+  <canvas width="800" height="608" id="game"></canvas>
+
+  <div id="menu">
+    <h1>Snake Game</h1>
+    <p>Select a skin:</p>
+    <div id="skin-list"></div>
+    <button id="start-game">Start Game</button>
+  </div>
+
+  <div id="end-screen" style="display: none;">
+    <h1>Game Over</h1>
+    <p id="final-score">Your Score: 0</p>
+    <button id="restart-game">Restart</button>
+    <button id="select-skin">Change Skin</button>
+  </div>
+
   <script>
-    var canvas = document.getElementById('game');
-    var context = canvas.getContext('2d');
+    const canvas = document.getElementById('game');
+    const context = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const menu = document.getElementById('menu');
+    const endScreen = document.getElementById('end-screen');
+    const finalScore = document.getElementById('final-score');
+    const skinList = document.getElementById('skin-list');
 
-    var grid = 32;
-    var count = 0;
+    const grid = 32;
+    let count = 0;
 
-    var snake = {
+    const snake = {
       x: 160,
       y: 160,
       dx: grid,
       dy: 0,
       cells: [],
-      maxCells: 4
+      maxCells: 4,
     };
 
-    var apple = {
-      x: 320,
-      y: 320
+    const apple = {
+      x: getRandomInt(0, canvas.width / grid) * grid,
+      y: getRandomInt(0, canvas.height / grid) * grid,
     };
+
+    const skins = [
+      { name: 'Default', colors: ['blue', 'cyan'] },
+      { name: 'Red', colors: ['red', 'orange'], unlockAt: 10 },
+      { name: 'Green', colors: ['green', 'lime'], unlockAt: 20 },
+      { name: 'Purple', colors: ['purple', 'magenta'], unlockAt: 30 },
+    ];
+    let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['Default'];
+    let selectedSkin = localStorage.getItem('selectedSkin') || 'Default';
 
     function getRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    function updateSkinList() {
+      skinList.innerHTML = '';
+      skins.forEach((skin) => {
+        const button = document.createElement('button');
+        button.textContent = skin.name;
+        button.disabled = !unlockedSkins.includes(skin.name);
+        button.style.backgroundColor = skin.colors[0];
+        button.addEventListener('click', () => {
+          selectedSkin = skin.name;
+          localStorage.setItem('selectedSkin', selectedSkin);
+        });
+        skinList.appendChild(button);
+      });
+    }
+
+    function unlockSkin(score) {
+      skins.forEach((skin) => {
+        if (!unlockedSkins.includes(skin.name) && skin.unlockAt && score >= skin.unlockAt) {
+          unlockedSkins.push(skin.name);
+          localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+        }
+      });
+    }
+
+    function drawSnakeCell(cell) {
+      const skin = skins.find((s) => s.name === selectedSkin);
+      const gradient = context.createLinearGradient(cell.x, cell.y, cell.x + grid, cell.y + grid);
+      gradient.addColorStop(0, skin.colors[0]);
+      gradient.addColorStop(1, skin.colors[1]);
+      context.fillStyle = gradient;
+      context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
+    }
+
+    function resetGame() {
+      snake.x = 160;
+      snake.y = 160;
+      snake.cells = [];
+      snake.maxCells = 4;
+      snake.dx = grid;
+      snake.dy = 0;
+      scoreDisplay.textContent = 'Score: 0';
+      apple.x = getRandomInt(0, canvas.width / grid) * grid;
+      apple.y = getRandomInt(0, canvas.height / grid) * grid;
     }
 
     function loop() {
@@ -63,11 +150,9 @@
 
       context.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Move the snake
       snake.x += snake.dx;
       snake.y += snake.dy;
 
-      // Wrap edges
       if (snake.x < 0) snake.x = canvas.width - grid;
       else if (snake.x >= canvas.width) snake.x = 0;
 
@@ -77,47 +162,55 @@
       snake.cells.unshift({ x: snake.x, y: snake.y });
       if (snake.cells.length > snake.maxCells) snake.cells.pop();
 
-      // Draw apple
       context.fillStyle = 'red';
       context.fillRect(apple.x, apple.y, grid - 1, grid - 1);
 
-      // Draw gradient snake
-      snake.cells.forEach(function (cell, index) {
-        var gradient = context.createLinearGradient(cell.x, cell.y, cell.x + grid, cell.y + grid);
-        gradient.addColorStop(0, 'blue');
-        gradient.addColorStop(1, 'cyan');
-        context.fillStyle = gradient;
-        context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
+      snake.cells.forEach((cell, index) => {
+        drawSnakeCell(cell);
 
-        // Snake eats apple
         if (cell.x === apple.x && cell.y === apple.y) {
           snake.maxCells++;
-          document.getElementById('score').textContent = `Score: ${snake.maxCells - 4}`;
-
-          // Spawn apple immediately
+          scoreDisplay.textContent = `Score: ${snake.maxCells - 4}`;
+          unlockSkin(snake.maxCells - 4);
           apple.x = getRandomInt(0, canvas.width / grid) * grid;
           apple.y = getRandomInt(0, canvas.height / grid) * grid;
         }
 
-        // Check collision with snake body
-        for (var i = index + 1; i < snake.cells.length; i++) {
+        for (let i = index + 1; i < snake.cells.length; i++) {
           if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
-            snake.x = 160;
-            snake.y = 160;
-            snake.cells = [];
-            snake.maxCells = 4;
-            snake.dx = grid;
-            snake.dy = 0;
-
-            document.getElementById('score').textContent = 'Score: 0';
-            apple.x = getRandomInt(0, canvas.width / grid) * grid;
-            apple.y = getRandomInt(0, canvas.height / grid) * grid;
+            finalScore.textContent = `Your Score: ${snake.maxCells - 4}`;
+            canvas.style.display = 'none';
+            scoreDisplay.style.display = 'none';
+            endScreen.style.display = 'block';
+            return;
           }
         }
       });
     }
 
-    document.addEventListener('keydown', function (e) {
+    document.getElementById('start-game').addEventListener('click', () => {
+      menu.style.display = 'none';
+      canvas.style.display = 'block';
+      scoreDisplay.style.display = 'block';
+      resetGame();
+      requestAnimationFrame(loop);
+    });
+
+    document.getElementById('restart-game').addEventListener('click', () => {
+      endScreen.style.display = 'none';
+      canvas.style.display = 'block';
+      scoreDisplay.style.display = 'block';
+      resetGame();
+      requestAnimationFrame(loop);
+    });
+
+    document.getElementById('select-skin').addEventListener('click', () => {
+      endScreen.style.display = 'none';
+      menu.style.display = 'block';
+      updateSkinList();
+    });
+
+    document.addEventListener('keydown', (e) => {
       if (e.which === 37 && snake.dx === 0) {
         snake.dx = -grid;
         snake.dy = 0;
@@ -133,7 +226,7 @@
       }
     });
 
-    requestAnimationFrame(loop);
+    updateSkinList();
   </script>
 </body>
 </html>
