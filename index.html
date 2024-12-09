@@ -1,9 +1,9 @@
-index.html<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Snake Game with Skins, Shop, and Leaderboard</title>
+  <title>Snake Game with Skins and Shop</title>
   <style>
     html, body { height: 100%; margin: 0; }
     body {
@@ -13,77 +13,25 @@ index.html<!DOCTYPE html>
       align-items: center;
       justify-content: center;
       font-family: Arial, sans-serif;
-      text-align: center;
     }
-    canvas { 
-      border: 2px solid white; 
-      display: none; 
-      margin: 20px;
-    }
+    canvas { border: 1px solid white; display: none; }
     button { margin: 5px; padding: 10px; font-size: 16px; cursor: pointer; }
     .hidden { display: none; }
     .info { position: absolute; font-size: 18px; color: white; }
     .coins-display { top: 10px; left: 10px; }
     .score-display { top: 10px; right: 10px; }
-    #menu, #shop, #end-screen, #leaderboard { display: none; text-align: center; }
+    #menu, #shop, #end-screen { display: none; text-align: center; }
     #menu { display: block; }
     .shop-item { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    .shop-item span { color: white; } 
-
-    /* Title Styling */
-    #title {
-      font-size: 48px;
-      color: white;
-      margin-bottom: 30px;
-      text-transform: uppercase;
-      font-weight: bold;
-      letter-spacing: 5px;
-    }
-
-    /* Leaderboard */
-    #leaderboard {
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 20px;
-      color: white;
-      margin-top: 20px;
-      border-radius: 5px;
-    }
-    #leaderboard h2 {
-      margin: 0;
-      font-size: 24px;
-    }
-    #leaderboard ul {
-      list-style-type: none;
-      padding: 0;
-      margin-top: 10px;
-    }
-    #leaderboard li {
-      font-size: 18px;
-    }
-
-    /* File Input styling */
-    #background-input {
-      margin-top: 20px;
-      padding: 10px;
-      color: white;
-      background-color: #333;
-      border: none;
-      cursor: pointer;
-    }
+    .shop-item span { color: white; } /* Shop text white */
   </style>
 </head>
 <body>
-  <!-- Big Title -->
-  <div id="title">KOOL SNAKE</div>
-
   <!-- Menu -->
   <div id="menu">
     <h1>Snake Game</h1>
     <button id="start-game">Start Game</button>
     <button id="open-shop">Shop</button>
-    <button id="view-leaderboard">Leaderboard</button>
-    <button id="custom-background">Custom Background</button>
-    <button id="reset-background">Reset Background</button>
   </div>
 
   <!-- Shop -->
@@ -101,19 +49,10 @@ index.html<!DOCTYPE html>
     <button id="return-menu">Return to Menu</button>
   </div>
 
-  <!-- Leaderboard -->
-  <div id="leaderboard" class="hidden">
-    <h2>Leaderboard</h2>
-    <ul id="leaderboard-list"></ul>
-    <button id="back-to-menu-leaderboard">Back to Menu</button>
-  </div>
-
   <!-- Game -->
   <canvas id="game" width="800" height="600"></canvas>
   <div class="info coins-display">Coins: <span id="coins">0</span></div>
   <div class="info score-display">Score: <span id="score">0</span></div>
-
-  <input type="file" id="background-input" class="hidden" accept="image/*"> <!-- File input -->
 
   <script>
     // Core Variables
@@ -122,120 +61,212 @@ index.html<!DOCTYPE html>
     const menu = document.getElementById('menu');
     const shop = document.getElementById('shop');
     const endScreen = document.getElementById('end-screen');
-    const leaderboard = document.getElementById('leaderboard');
     const shopItems = document.getElementById('shop-items');
     const coinsDisplay = document.getElementById('coins');
     const scoreDisplay = document.getElementById('score');
     const finalScore = document.getElementById('final-score');
-    const leaderboardList = document.getElementById('leaderboard-list');
-    const grid = 20;  
-    const border = 2; 
+    const grid = 32;
     let count = 0;
     let coins = parseInt(localStorage.getItem('coins')) || 0;
     let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['Default'];
     let selectedSkin = localStorage.getItem('selectedSkin') || 'Default';
-    let leaderboardScores = JSON.parse(localStorage.getItem('leaderboardScores')) || [];
-    let customBackground = localStorage.getItem('customBackground') || null; // Store custom background
+
+    // Snake and Apple
+    const snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
+    const apple = { x: 320, y: 320 };
+
+    // Skins
+    const skins = [
+      { name: 'Default', colors: ['blue', 'cyan'], price: 0 },
+      { name: 'Red', colors: ['red', 'orange'], price: 50 },
+      { name: 'Green', colors: ['green', 'lime'], price: 100 },
+      { name: 'Purple', colors: ['purple', 'magenta'], price: 150 },
+      { name: 'Yellow', colors: ['yellow', 'gold'], price: 200 },
+      { name: 'Ocean', colors: ['aqua', 'navy'], price: 250 },
+      { name: 'Sunset', colors: ['pink', 'orange'], price: 300 },
+      { name: 'Galaxy', colors: ['black', 'purple', 'cyan'], price: 350 },
+      { name: 'Emerald', colors: ['darkgreen', 'lightgreen'], price: 400 },
+      { name: 'Fire', colors: ['red', 'yellow'], price: 450 },
+      { name: 'Ice', colors: ['cyan', 'white'], price: 500 },
+      { name: 'Storm', colors: ['gray', 'black'], price: 550 },
+      { name: 'Rainbow', colors: ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'], price: 600 },
+      { name: 'Chocolate', colors: ['brown', 'tan'], price: 650 },
+      { name: 'Neon', colors: ['lime', 'fuchsia'], price: 700 },
+      { name: 'Cotton Candy', colors: ['pink', 'lightblue'], price: 750 },
+      { name: 'Lava', colors: ['orange', 'red', 'darkred'], price: 800 },
+      { name: 'Forest', colors: ['green', 'darkgreen'], price: 850 },
+      { name: 'Electric', colors: ['yellow', 'blue'], price: 900 },
+    ];
 
     // Save Game State
     function saveGameState() {
       localStorage.setItem('coins', coins);
       localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
       localStorage.setItem('selectedSkin', selectedSkin);
-      localStorage.setItem('customBackground', customBackground); // Save custom background
     }
 
-    // Show Custom Background Picker
-    document.getElementById('custom-background').addEventListener('click', () => {
-      document.getElementById('background-input').click();
-    });
+    // Load Shop
+    function loadShop() {
+      shopItems.innerHTML = '';
+      skins.forEach(skin => {
+        const div = document.createElement('div');
+        div.className = 'shop-item';
+        const text = document.createElement('span');
+        const button = document.createElement('button');
 
-    // Handle Background Image Upload
-    document.getElementById('background-input').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          customBackground = event.target.result;
+        // Set text and button style
+        text.textContent = `${skin.name} (${skin.price} coins)`;
+        button.textContent = unlockedSkins.includes(skin.name) ? 'Use' : 'Buy';
+        button.disabled = !unlockedSkins.includes(skin.name) && coins < skin.price;
+
+        // Add styles for skins
+        if (coins < skin.price && !unlockedSkins.includes(skin.name)) {
+          button.style.border = '2px solid red'; // Red border if not affordable
+        } else if (selectedSkin === skin.name) {
+          button.style.border = '2px solid white'; // Highlight selected skin
+        } else {
+          button.style.border = 'none'; // Default
+        }
+
+        button.style.background = `linear-gradient(to right, ${skin.colors.join(', ')})`;
+        button.style.color = 'white';
+
+        // Button click logic
+        button.addEventListener('click', () => {
+          if (unlockedSkins.includes(skin.name)) {
+            selectedSkin = skin.name;
+          } else if (coins >= skin.price) {
+            coins -= skin.price;
+            unlockedSkins.push(skin.name);
+          }
           saveGameState();
-          loadCustomBackground();
-        };
-        reader.readAsDataURL(file); // Convert image to data URL
-      }
-    });
+          loadShop();
+          coinsDisplay.textContent = coins;
+        });
 
-    // Load Custom Background
-    function loadCustomBackground() {
-      if (customBackground) {
-        const backgroundImage = new Image();
-        backgroundImage.src = customBackground;
-        backgroundImage.onload = function() {
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-        };
-      }
-    }
-
-    // Reset Background to Default
-    document.getElementById('reset-background').addEventListener('click', () => {
-      customBackground = null;
-      saveGameState();
-      loadDefaultBackground();
-    });
-
-    // Load Default Background (Solid Black for example)
-    function loadDefaultBackground() {
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.fillStyle = 'black'; // Default background color
-      context.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Draw Snake and Apple (Handling Background and Skin)
-    function drawSnake() {
-      if (customBackground) {
-        loadCustomBackground();
-      } else {
-        loadDefaultBackground();
-      }
-
-      const snakeColor = selectedSkin === 'Default' ? 'green' : 'blue';
-      snake.cells.forEach((cell) => {
-        context.fillStyle = snakeColor;
-        context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
+        div.appendChild(text);
+        div.appendChild(button);
+        shopItems.appendChild(div);
       });
+    }
+
+    // Reset Game
+    function resetGame() {
+      snake.x = 160;
+      snake.y = 160;
+      snake.cells = [];
+      snake.maxCells = 4;
+      snake.dx = grid;
+      snake.dy = 0;
+      apple.x = Math.floor(Math.random() * 25) * grid;
+      apple.y = Math.floor(Math.random() * 19) * grid;
+    }
+
+    // Draw Snake
+    function drawSnake() {
+      const skin = skins.find(s => s.name === selectedSkin);
+      snake.cells.forEach((cell, index) => {
+        const gradient = context.createLinearGradient(cell.x, cell.y, cell.x + grid, cell.y + grid);
+        skin.colors.forEach((color, i) => gradient.addColorStop(i / (skin.colors.length - 1), color));
+        context.fillStyle = gradient;
+        context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
+
+        // Check Collision
+        if (cell.x === apple.x && cell.y === apple.y) {
+          snake.maxCells++;
+          coins += 10;
+          coinsDisplay.textContent = coins;
+          apple.x = Math.floor(Math.random() * 25) * grid;
+          apple.y = Math.floor(Math.random() * 19) * grid;
+          saveGameState();
+        }
+
+        for (let i = index + 1; i < snake.cells.length; i++) {
+          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+            showEndScreen();
+            return;
+          }
+        }
+      });
+    }
+
+    // Show End Screen
+    function showEndScreen() {
+      canvas.style.display = 'none';
+      endScreen.style.display = 'block';
+      finalScore.textContent = snake.maxCells - 4;
+    }
+
+    // Game Loop
+    function loop() {
+      requestAnimationFrame(loop);
+      if (++count < 4) return;
+      count = 0;
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      snake.x += snake.dx;
+      snake.y += snake.dy;
+
+      if (snake.x < 0) snake.x = canvas.width - grid;
+      if (snake.x >= canvas.width) snake.x = 0;
+      if (snake.y < 0) snake.y = canvas.height - grid;
+      if (snake.y >= canvas.height) snake.y = 0;
+
+      snake.cells.unshift({ x: snake.x, y: snake.y });
+      if (snake.cells.length > snake.maxCells) snake.cells.pop();
 
       context.fillStyle = 'red';
       context.fillRect(apple.x, apple.y, grid - 1, grid - 1);
-    }
 
-    // Initialize Snake, Apple, and Game Loop
-    const snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
-    const apple = { x: 320, y: 320 };
-
-    // Game Loop
-    function gameLoop() {
-      requestAnimationFrame(gameLoop);
-      if (++count < 4) return;
-      count = 0;
       drawSnake();
     }
 
-    // Start Game
+    // Event Listeners
     document.getElementById('start-game').addEventListener('click', () => {
       menu.style.display = 'none';
       canvas.style.display = 'block';
-      gameLoop();
+      resetGame();
+      requestAnimationFrame(loop);
     });
 
-    // Back to Menu
+    document.getElementById('open-shop').addEventListener('click', () => {
+      menu.style.display = 'none';
+      shop.style.display = 'block';
+      loadShop();
+    });
+
     document.getElementById('back-to-menu').addEventListener('click', () => {
       shop.style.display = 'none';
       menu.style.display = 'block';
     });
 
-    // Start Game Logic
+    document.getElementById('restart-game').addEventListener('click', () => {
+      endScreen.style.display = 'none';
+      canvas.style.display = 'block';
+      resetGame();
+      requestAnimationFrame(loop);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.which === 37 && snake.dx === 0) {
+        snake.dx = -grid;
+        snake.dy = 0;
+      } else if (e.which === 38 && snake.dy === 0) {
+        snake.dy = -grid;
+        snake.dx = 0;
+      } else if (e.which === 39 && snake.dx === 0) {
+        snake.dx = grid;
+        snake.dy = 0;
+      } else if (e.which === 40 && snake.dy === 0) {
+        snake.dy = grid;
+        snake.dx = 0;
+      }
+    });
+
+    // Load Initial State
     coinsDisplay.textContent = coins;
-    loadDefaultBackground();
+    resetGame();
   </script>
 </body>
 </html>
